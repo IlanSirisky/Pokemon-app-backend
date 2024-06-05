@@ -3,6 +3,7 @@ export interface Pokemon {
   name: string;
   isOwned: boolean;
   description: string;
+  image: string;
 }
 
 export interface BaseStats {
@@ -13,6 +14,7 @@ export interface BaseStats {
   sp_attack: number;
   sp_defense: number;
   speed: number;
+  power_level: number;
 }
 
 export interface Profile {
@@ -20,13 +22,6 @@ export interface Profile {
   height: string;
   weight: string;
   ability: string[];
-}
-
-export interface Images {
-  pokemon_id: number;
-  sprite: string;
-  thumbnail: string;
-  hires: string;
 }
 
 export interface Types {
