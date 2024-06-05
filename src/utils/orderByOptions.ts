@@ -1,21 +1,11 @@
 import { SortByValues } from "../types/sortBy";
 
-// Map SortByValues to SQL ORDER BY clauses
-export const getOrderByClause = (sortBy: string): string => {
-    switch (sortBy) {
-      case SortByValues.AZ:
-        return 'p.name ASC';
-      case SortByValues.ZA:
-        return 'p.name DESC';
-      case SortByValues.POWER_HIGH_TO_LOW:
-        return 'bs.power_level DESC';
-      case SortByValues.POWER_LOW_TO_HIGH:
-        return 'bs.power_level ASC';
-      case SortByValues.HP_HIGH_TO_LOW:
-        return 'bs.hp DESC';
-      case SortByValues.HP_LOW_TO_HIGH:
-        return 'bs.hp ASC';
-      default:
-        return 'p.id ASC';
-    }
-  };
+export const sortFunctions: { [key in SortByValues]: (a: any, b: any) => number } = {
+  [SortByValues.ID]: (a, b) => a.id - b.id,
+  [SortByValues.AZ]: (a, b) => a.name.localeCompare(b.name),
+  [SortByValues.ZA]: (a, b) => b.name.localeCompare(a.name),
+  [SortByValues.POWER_HIGH_TO_LOW]: (a, b) => b.baseStats[0]?.power_level - a.baseStats[0]?.power_level,
+  [SortByValues.POWER_LOW_TO_HIGH]: (a, b) => a.baseStats[0]?.power_level - b.baseStats[0]?.power_level,
+  [SortByValues.HP_HIGH_TO_LOW]: (a, b) => b.baseStats[0]?.hp - a.baseStats[0]?.hp,
+  [SortByValues.HP_LOW_TO_HIGH]: (a, b) => a.baseStats[0]?.hp - b.baseStats[0]?.hp
+};

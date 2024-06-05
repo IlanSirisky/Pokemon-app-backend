@@ -1,13 +1,11 @@
-const { Pool } = require("pg");
 const fs = require("fs");
 const path = require("path");
 const dotenv = require("dotenv");
+const { PrismaClient } = require("@prisma/client");
 
 dotenv.config();
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
+const prisma = new PrismaClient();
 
 const jsonFilePath = path.join(__dirname, "./pokedex.json");
 const data = JSON.parse(fs.readFileSync(jsonFilePath, "utf8"));
@@ -28,20 +26,37 @@ const calculateThresholds = (scores) => {
     scores[Math.floor(len * 0.4)],
     scores[Math.floor(len * 0.6)],
     scores[Math.floor(len * 0.8)],
-    scores[len - 1]
+    scores[len - 1],
   ];
 };
 
 const insertData = async () => {
   try {
-    const totalScores = data.map(pokemon => {
-      return pokemon.base.HP + pokemon.base.Attack + pokemon.base.Defense + pokemon.base["Sp. Attack"] + pokemon.base["Sp. Defense"] + pokemon.base.Speed;
+    const totalScores = data.map((pokemon) => {
+      return (
+        pokemon.base.HP +
+        pokemon.base.Attack +
+        pokemon.base.Defense +
+        pokemon.base["Sp. Attack"] +
+        pokemon.base["Sp. Defense"] +
+        pokemon.base.Speed
+      );
     });
 
     const thresholds = calculateThresholds(totalScores);
 
     for (const pokemon of data) {
-      const client = await pool.connect();
+      // Check if the Pokemon already exists
+      const existingPokemon = await prisma.pokemon.findUnique({
+        where: { id: pokemon.id },
+      });
+
+      if (existingPokemon) {
+        console.log(
+          `Pokemon with id ${pokemon.id} already exists. Skipping...`
+        );
+        continue;
+      }
 
       // Calculate the total score
       const hp = pokemon.base.HP;
@@ -55,63 +70,61 @@ const insertData = async () => {
       // Determine the power level
       const powerLevel = calculatePowerLevel(totalScore, thresholds);
 
-      // Insert into pokemon table
-      await client.query(
-        "INSERT INTO pokemon (id, name, isOwned, description, image) VALUES ($1, $2, $3, $4, $5)",
-        [pokemon.id, pokemon.name.english, false, pokemon.description, pokemon.image.hires]
-      );
-
-      // Insert into base_stats table
-      await client.query(
-        `INSERT INTO base_stats (pokemon_id, hp, attack, defense, sp_attack, sp_defense, speed, power_level) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-        [pokemon.id, hp, attack, defense, spAttack, spDefense, speed, powerLevel]
-      );
+      // Insert into Pokemon table
+      const createdPokemon = await prisma.pokemon.create({
+        data: {
+          id: pokemon.id,
+          name: pokemon.name.english,
+          isOwned: false,
+          description: pokemon.description,
+          image: pokemon.image.hires,
+          profile: {
+            create: {
+              height: pokemon.profile.height,
+              weight: pokemon.profile.weight,
+              ability: pokemon.profile.ability.map((ability) => ability[0]),
+            },
+          },
+          baseStats: {
+            create: {
+              hp: hp,
+              attack: attack,
+              defense: defense,
+              sp_attack: spAttack,
+              sp_defense: spDefense,
+              speed: speed,
+              power_level: powerLevel,
+            },
+          },
+        },
+      });
 
       // Insert types into types table and pokemon_types table
       for (const typeName of pokemon.type) {
-        let typeId;
-        const typeRes = await client.query(
-          "SELECT id FROM types WHERE name = $1",
-          [typeName]
-        );
-        if (typeRes.rows.length > 0) {
-          typeId = typeRes.rows[0].id;
-        } else {
-          const newTypeRes = await client.query(
-            "INSERT INTO types (name) VALUES ($1) RETURNING id",
-            [typeName]
-          );
-          typeId = newTypeRes.rows[0].id;
+        let type = await prisma.types.findFirst({
+          where: { name: typeName },
+        });
+
+        if (!type) {
+          type = await prisma.types.create({
+            data: { name: typeName },
+          });
         }
-        await client.query(
-          "INSERT INTO pokemon_types (pokemon_id, type_id) VALUES ($1, $2)",
-          [pokemon.id, typeId]
-        );
+
+        await prisma.pokemonTypes.create({
+          data: {
+            pokemon_id: createdPokemon.id,
+            type_id: type.id,
+          },
+        });
       }
-
-      // Extract ability names
-      const abilities = pokemon.profile.ability.map(ability => ability[0]);
-
-      // Insert into profile table
-      await client.query(
-        `INSERT INTO profile (pokemon_id, height, weight, ability) 
-         VALUES ($1, $2, $3, $4)`,
-        [
-          pokemon.id,
-          pokemon.profile.height,
-          pokemon.profile.weight,
-          abilities
-        ]
-      );
-
-      client.release();
     }
+
     console.log("Data inserted successfully");
   } catch (error) {
     console.error("Error inserting data:", error);
   } finally {
-    pool.end();
+    await prisma.$disconnect();
   }
 };
 
