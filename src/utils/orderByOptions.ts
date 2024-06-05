@@ -16,6 +16,6 @@ export const getOrderByClause = (sortBy: string): string => {
       case SortByValues.HP_LOW_TO_HIGH:
         return 'bs.hp ASC';
       default:
-        return 'p.id ASC'; // Default sorting by ID
+        return 'p.id ASC';
     }
   };

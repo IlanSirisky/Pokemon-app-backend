@@ -33,9 +33,9 @@ export const getPokemonById = async (req: Request, res: Response) => {
   try {
     const query = `
       SELECT p.id, p.name, p.description, p.image, 
-             pr.height, pr.weight, 
-             COALESCE(ARRAY_AGG(DISTINCT t.name) FILTER (WHERE t.name IS NOT NULL), '{}') AS types,
-             pr.ability AS abilities
+            pr.height, pr.weight, 
+            ARRAY_AGG(DISTINCT t.name) AS types,
+            pr.ability AS abilities
       FROM pokemon p
       JOIN profile pr ON p.id = pr.pokemon_id
       LEFT JOIN pokemon_types pt ON p.id = pt.pokemon_id
