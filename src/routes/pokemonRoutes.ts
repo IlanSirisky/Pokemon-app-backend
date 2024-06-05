@@ -15,7 +15,7 @@ router.get("/pokemons", getAllPokemons);
 router.get("/pokemons/owned", getOwnedPokemons);
 router.get("/pokemons/:id", getPokemonById);
 router.get("/random-pokemon", getRandomPokemon);
-router.get('/search-pokemons', searchPokemons);
+router.get("/search-pokemons", searchPokemons);
 
 /*** PUT ***/
 router.put("/pokemons/:id/catch", catchPokemon);

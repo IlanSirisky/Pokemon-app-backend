@@ -90,6 +90,9 @@ const insertData = async () => {
         );
       }
 
+      // Extract ability names
+      const abilities = pokemon.profile.ability.map(ability => ability[0]);
+
       // Insert into profile table
       await client.query(
         `INSERT INTO profile (pokemon_id, height, weight, ability) 
@@ -98,7 +101,7 @@ const insertData = async () => {
           pokemon.id,
           pokemon.profile.height,
           pokemon.profile.weight,
-          pokemon.profile.ability,
+          abilities
         ]
       );
 

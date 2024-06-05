@@ -31,15 +31,30 @@ export const getOwnedPokemons = async (req: Request, res: Response) => {
 export const getPokemonById = async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
-    const result = await pool.query("SELECT * FROM pokemon WHERE id = $1", [
-      id,
-    ]);
+    const query = `
+      SELECT p.id, p.name, p.description, p.image, 
+             pr.height, pr.weight, 
+             COALESCE(ARRAY_AGG(DISTINCT t.name) FILTER (WHERE t.name IS NOT NULL), '{}') AS types,
+             pr.ability AS abilities
+      FROM pokemon p
+      JOIN profile pr ON p.id = pr.pokemon_id
+      LEFT JOIN pokemon_types pt ON p.id = pt.pokemon_id
+      LEFT JOIN types t ON pt.type_id = t.id
+      WHERE p.id = $1
+      GROUP BY p.id, pr.height, pr.weight, pr.ability;
+    `;
+
+    const result = await pool.query(query, [id]);
+
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "Pokemon not found" });
     }
-    res.json(result.rows[0]);
+
+    const pokemon = result.rows[0];
+
+    res.json(pokemon);
   } catch (err) {
-    console.error(err);
+    console.error("Error executing query:", err);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
@@ -89,42 +104,42 @@ export const catchPokemon = async (req: Request, res: Response) => {
 
 // Search and filter Pokemons
 export const searchPokemons = async (req: Request, res: Response) => {
-    const { isOwned, q, sortBy = SortByValues.ID } = req.query;
-  
-    try {
-      let query = `
+  const { isOwned, q, sortBy = SortByValues.ID } = req.query;
+
+  try {
+    let query = `
         SELECT p.id, p.name, p.isOwned, p.description, p.image, 
                bs.hp, bs.attack, bs.power_level
         FROM pokemon p
         JOIN base_stats bs ON p.id = bs.pokemon_id`;
-      const values: any[] = [];
-  
-      // Constructing WHERE clause
-      const whereConditions: string[] = [];
-  
-      if (isOwned !== undefined) {
-        whereConditions.push(`p.isOwned = $${values.length + 1}`);
-        values.push(isOwned === 'true');
-      }
-  
-      if (q) {
-        whereConditions.push(`p.name ILIKE $${values.length + 1}`);
-        values.push(`%${q}%`);
-      }
-  
-      if (whereConditions.length > 0) {
-        query += ` WHERE ${whereConditions.join(' AND ')}`;
-      }
-  
-      // Adding ORDER BY clause
-      query += ` ORDER BY ${getOrderByClause(sortBy as string)}`;
-  
-      // Execute the query
-      const result = await pool.query(query, values);
-  
-      res.json(result.rows);
-    } catch (err) {
-      console.error('Error executing query:', err);
-      res.status(500).json({ error: 'Internal Server Error' });
+    const values: any[] = [];
+
+    // Constructing WHERE clause
+    const whereConditions: string[] = [];
+
+    if (isOwned !== undefined) {
+      whereConditions.push(`p.isOwned = $${values.length + 1}`);
+      values.push(isOwned === "true");
     }
-  };
+
+    if (q) {
+      whereConditions.push(`p.name ILIKE $${values.length + 1}`);
+      values.push(`%${q}%`);
+    }
+
+    if (whereConditions.length > 0) {
+      query += ` WHERE ${whereConditions.join(" AND ")}`;
+    }
+
+    // Adding ORDER BY clause
+    query += ` ORDER BY ${getOrderByClause(sortBy as string)}`;
+
+    // Execute the query
+    const result = await pool.query(query, values);
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Error executing query:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
