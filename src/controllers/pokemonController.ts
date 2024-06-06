@@ -66,19 +66,28 @@ export const getRandomPokemon = async (req: Request, res: Response) => {
   const { isOwned } = req.query;
 
   try {
+    // First, count the total number of available Pokémon
+    const count = await prisma.pokemon.count({
+      where: { isOwned: isOwned === "true" },
+    });
+
+    if (count === 0) {
+      return res.status(404).json({ error: "No Pokémon found" });
+    }
+
+    // Generate a random offset
+    const randomOffset = Math.floor(Math.random() * count);
+
+    // Fetch the Pokémon with the random offset
     const pokemons: IPokemonData[] = await prisma.pokemon.findMany({
       where: { isOwned: isOwned === "true" },
-      orderBy: { id: "asc" },
       take: 1,
+      skip: randomOffset,
       include: {
         profile: true,
         baseStats: true,
       },
     });
-
-    if (pokemons.length === 0) {
-      return res.status(404).json({ error: "No Pokémon found" });
-    }
 
     res.json(pokemons[0]);
   } catch (err) {
@@ -123,7 +132,8 @@ export const searchPokemons = async (req: Request, res: Response) => {
       whereClause.name = { contains: q as string, mode: "insensitive" };
     }
 
-    const orderBy = orderByMapping[sortBy as SortByValues] || orderByMapping[SortByValues.ID];
+    const orderBy =
+      orderByMapping[sortBy as SortByValues] || orderByMapping[SortByValues.ID];
 
     const pokemons: IPokemonData[] = await prisma.pokemon.findMany({
       where: whereClause,
