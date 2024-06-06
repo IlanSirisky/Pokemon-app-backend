@@ -1,18 +1,28 @@
-export type IPokemonData = {
+export interface IPokemonData {
   id: number;
   name: string;
   isOwned: boolean;
   description: string;
   image: string;
-  height: string | undefined;
-  weight: string | undefined;
-  abilities: string[] | undefined;
-  hp: number | undefined;
-  attack: number | undefined;
-  defense: number | undefined;
-  sp_attack: number | undefined;
-  sp_defense: number | undefined;
-  speed: number | undefined;
-  power_level: number | undefined;
-  types: string[] | undefined;
-};
+  profile: Profile | null;
+  baseStats: BaseStats | null;
+}
+
+export interface Profile {
+  pokemon_id: number;
+  height: string;
+  weight: string;
+  ability: string[];
+  types: string[];
+}
+
+export interface BaseStats {
+  pokemon_id: number;
+  hp: number;
+  attack: number;
+  defense: number;
+  sp_attack: number;
+  sp_defense: number;
+  speed: number;
+  power_level: number;
+}

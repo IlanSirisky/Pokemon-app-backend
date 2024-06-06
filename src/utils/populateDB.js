@@ -7,7 +7,7 @@ dotenv.config();
 
 const prisma = new PrismaClient();
 
-const jsonFilePath = path.join(__dirname, "./pokedex.json");
+const jsonFilePath = path.join(__dirname, "../data/pokedex.json");
 const data = JSON.parse(fs.readFileSync(jsonFilePath, "utf8"));
 
 const calculatePowerLevel = (totalScore, thresholds) => {
@@ -71,7 +71,7 @@ const insertData = async () => {
       const powerLevel = calculatePowerLevel(totalScore, thresholds);
 
       // Insert into Pokemon table
-      const createdPokemon = await prisma.pokemon.create({
+      await prisma.pokemon.create({
         data: {
           id: pokemon.id,
           name: pokemon.name.english,
@@ -83,6 +83,7 @@ const insertData = async () => {
               height: pokemon.profile.height,
               weight: pokemon.profile.weight,
               ability: pokemon.profile.ability.map((ability) => ability[0]),
+              types: pokemon.type,
             },
           },
           baseStats: {
@@ -98,26 +99,6 @@ const insertData = async () => {
           },
         },
       });
-
-      // Insert types into types table and pokemon_types table
-      for (const typeName of pokemon.type) {
-        let type = await prisma.types.findFirst({
-          where: { name: typeName },
-        });
-
-        if (!type) {
-          type = await prisma.types.create({
-            data: { name: typeName },
-          });
-        }
-
-        await prisma.pokemonTypes.create({
-          data: {
-            pokemon_id: createdPokemon.id,
-            type_id: type.id,
-          },
-        });
-      }
     }
 
     console.log("Data inserted successfully");
