@@ -2,14 +2,15 @@ import { Prisma, PrismaClient } from "@prisma/client";
 import { NextFunction, Request, Response } from "express";
 import { SortByValues } from "../types/sortBy";
 import { orderByMapping } from "../utils/orderByOptions";
-import { IPokemonData } from "../types/pokemonType";
-
-const prisma = new PrismaClient();
-
-const includeRelations = {
-  profile: true,
-  baseStats: true,
-};
+import {
+  catchPokemonHandler,
+  getAllPokemonsHandler,
+  getOwnedPokemonsHandler,
+  getPokemonByIdHandler,
+  getPokemonCountHandler,
+  getRandomPokemonHandler,
+  searchPokemonsHandler,
+} from "../handlers/pokemonHandler";
 
 // Get all Pokemons
 export const getAllPokemons = async (
@@ -18,9 +19,7 @@ export const getAllPokemons = async (
   next: NextFunction
 ) => {
   try {
-    const pokemons: IPokemonData[] = await prisma.pokemon.findMany({
-      include: includeRelations,
-    });
+    const pokemons = await getAllPokemonsHandler();
     res.json(pokemons);
   } catch (err) {
     next(err);
@@ -34,10 +33,7 @@ export const getOwnedPokemons = async (
   next: NextFunction
 ) => {
   try {
-    const pokemons = await prisma.pokemon.findMany({
-      where: { isOwned: true },
-      include: includeRelations,
-    });
+    const pokemons = await getOwnedPokemonsHandler();
     res.json(pokemons);
   } catch (err) {
     next(err);
@@ -52,15 +48,10 @@ export const getPokemonById = async (
 ) => {
   const { id } = req.params;
   try {
-    const pokemon = await prisma.pokemon.findUnique({
-      where: { id: Number(id) },
-      include: includeRelations,
-    });
-
+    const pokemon = await getPokemonByIdHandler(Number(id));
     if (!pokemon) {
       return res.status(404).json({ error: "Pokemon not found" });
     }
-
     res.json(pokemon);
   } catch (err) {
     next(err);
@@ -76,26 +67,21 @@ export const getRandomPokemon = async (
   const { isOwned } = req.query;
 
   try {
-    const count = await prisma.pokemon.count({
-      where: { isOwned: isOwned === "true" },
-    });
+    const isOwnedBoolean = isOwned === "true";
+    // Get the count of owned or unowned Pokemons
+    const count = await getPokemonCountHandler(isOwnedBoolean);
 
     if (count === 0) {
       return res.status(404).json({ error: "No Pokémon found" });
     }
-
+    // Generate a random offset
     const randomOffset = Math.floor(Math.random() * count);
 
-    const pokemon = await prisma.pokemon.findFirst({
-      where: { isOwned: isOwned === "true" },
-      skip: randomOffset,
-      include: includeRelations,
-    });
-
+    // Get a random Pokemon
+    const pokemon = await getRandomPokemonHandler(isOwnedBoolean, randomOffset);
     if (!pokemon) {
       return res.status(404).json({ error: "No Pokémon found" });
     }
-
     res.json(pokemon);
   } catch (err) {
     next(err);
@@ -110,22 +96,17 @@ export const catchPokemon = async (
 ) => {
   const { id } = req.params;
   try {
-    const pokemon: IPokemonData = await prisma.pokemon.update({
-      where: { id: Number(id) },
-      data: { isOwned: true },
-      include: includeRelations,
-    });
-
+    const pokemon = await catchPokemonHandler(Number(id));
     if (!pokemon) {
       return res.status(404).json({ error: "Pokemon not found" });
     }
-
     res.json(pokemon);
   } catch (err) {
     next(err);
   }
 };
 
+// Get Pokemons with query parameters
 export const searchPokemons = async (
   req: Request,
   res: Response,
@@ -140,6 +121,7 @@ export const searchPokemons = async (
   } = req.query;
 
   try {
+    // Build where clause
     const whereClause: Prisma.PokemonWhereInput = {};
     if (isOwned !== undefined) {
       whereClause.isOwned = isOwned === "true";
@@ -148,23 +130,22 @@ export const searchPokemons = async (
       whereClause.name = { contains: q as string, mode: "insensitive" };
     }
 
+    // Get orderBy
     const orderBy =
       orderByMapping[sortBy as SortByValues] || orderByMapping[SortByValues.ID];
 
-    const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
-    const take = parseInt(limit as string);
+    // Calculate skip and take for pagination
+    const skip =
+      (parseInt(page as string, 10) - 1) * parseInt(limit as string, 10);
+    const take = parseInt(limit as string, 10);
 
-    const pokemons: IPokemonData[] = await prisma.pokemon.findMany({
-      where: whereClause,
-      include: includeRelations,
+    const result = await searchPokemonsHandler(
+      whereClause,
       orderBy,
       skip,
-      take,
-    });
-
-    const totalCount = await prisma.pokemon.count({ where: whereClause });
-
-    res.json({ pokemons, totalCount });
+      take
+    );
+    res.json(result);
   } catch (err) {
     next(err);
   }
