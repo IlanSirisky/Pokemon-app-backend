@@ -1,53 +1,60 @@
 import { Prisma, PrismaClient } from "@prisma/client";
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { SortByValues } from "../types/sortBy";
 import { orderByMapping } from "../utils/orderByOptions";
 import { IPokemonData } from "../types/pokemonType";
+
 const prisma = new PrismaClient();
 
+const includeRelations = {
+  profile: true,
+  baseStats: true,
+};
+
 // Get all Pokemons
-export const getAllPokemons = async (req: Request, res: Response) => {
+export const getAllPokemons = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const pokemons: IPokemonData[] = await prisma.pokemon.findMany({
-      include: {
-        profile: true,
-        baseStats: true,
-      },
+      include: includeRelations,
     });
     res.json(pokemons);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Internal Server Error" });
+    next(err);
   }
 };
 
 // Get my Pokemons
-export const getOwnedPokemons = async (req: Request, res: Response) => {
+export const getOwnedPokemons = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
-    const pokemons: IPokemonData[] = await prisma.pokemon.findMany({
+    const pokemons = await prisma.pokemon.findMany({
       where: { isOwned: true },
-      include: {
-        profile: true,
-        baseStats: true,
-      },
+      include: includeRelations,
     });
     res.json(pokemons);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Internal Server Error" });
+    next(err);
   }
 };
 
 // Get a specific Pokemon by ID
-export const getPokemonById = async (req: Request, res: Response) => {
+export const getPokemonById = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   const { id } = req.params;
   try {
-    const pokemon: IPokemonData | null = await prisma.pokemon.findUnique({
+    const pokemon = await prisma.pokemon.findUnique({
       where: { id: Number(id) },
-      include: {
-        profile: true,
-        baseStats: true,
-      },
+      include: includeRelations,
     });
 
     if (!pokemon) {
@@ -56,17 +63,19 @@ export const getPokemonById = async (req: Request, res: Response) => {
 
     res.json(pokemon);
   } catch (err) {
-    console.error("Error executing query:", err);
-    res.status(500).json({ error: "Internal Server Error" });
+    next(err);
   }
 };
 
 // Get a random Pokemon
-export const getRandomPokemon = async (req: Request, res: Response) => {
+export const getRandomPokemon = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   const { isOwned } = req.query;
 
   try {
-    // First, count the total number of available Pokémon
     const count = await prisma.pokemon.count({
       where: { isOwned: isOwned === "true" },
     });
@@ -75,38 +84,36 @@ export const getRandomPokemon = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "No Pokémon found" });
     }
 
-    // Generate a random offset
     const randomOffset = Math.floor(Math.random() * count);
 
-    // Fetch the Pokémon with the random offset
-    const pokemons: IPokemonData[] = await prisma.pokemon.findMany({
+    const pokemon = await prisma.pokemon.findFirst({
       where: { isOwned: isOwned === "true" },
-      take: 1,
       skip: randomOffset,
-      include: {
-        profile: true,
-        baseStats: true,
-      },
+      include: includeRelations,
     });
 
-    res.json(pokemons[0]);
+    if (!pokemon) {
+      return res.status(404).json({ error: "No Pokémon found" });
+    }
+
+    res.json(pokemon);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Internal Server Error" });
+    next(err);
   }
 };
 
-// PUT catch a pokemon - update isOwned to true
-export const catchPokemon = async (req: Request, res: Response) => {
+// PUT catch a Pokemon - update isOwned to true
+export const catchPokemon = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   const { id } = req.params;
   try {
-    const pokemon: IPokemonData | null = await prisma.pokemon.update({
+    const pokemon: IPokemonData = await prisma.pokemon.update({
       where: { id: Number(id) },
       data: { isOwned: true },
-      include: {
-        profile: true,
-        baseStats: true,
-      },
+      include: includeRelations,
     });
 
     if (!pokemon) {
@@ -115,12 +122,15 @@ export const catchPokemon = async (req: Request, res: Response) => {
 
     res.json(pokemon);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Internal Server Error" });
+    next(err);
   }
 };
 
-export const searchPokemons = async (req: Request, res: Response) => {
+export const searchPokemons = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   const { isOwned, q, sortBy = SortByValues.ID } = req.query;
 
   try {
@@ -137,16 +147,12 @@ export const searchPokemons = async (req: Request, res: Response) => {
 
     const pokemons: IPokemonData[] = await prisma.pokemon.findMany({
       where: whereClause,
-      include: {
-        profile: true,
-        baseStats: true,
-      },
+      include: includeRelations,
       orderBy,
     });
 
     res.json(pokemons);
   } catch (err) {
-    console.error("Error executing query:", err);
-    res.status(500).json({ error: "Internal Server Error" });
+    next(err);
   }
 };
