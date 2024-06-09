@@ -25,6 +25,14 @@ export const validateSearchPokemons = [
     .withMessage(
       `sortBy must be one of ${Object.values(SortByValues).join(", ")}`
     ),
+  query("page")
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage("page must be a positive integer greater than 0"),
+  query("limit")
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage("limit must be a positive integer greater than 0"),
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
