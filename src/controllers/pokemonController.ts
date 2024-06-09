@@ -131,7 +131,13 @@ export const searchPokemons = async (
   res: Response,
   next: NextFunction
 ) => {
-  const { isOwned, q, sortBy = SortByValues.ID } = req.query;
+  const {
+    isOwned,
+    q,
+    sortBy = SortByValues.ID,
+    page = 1,
+    limit = 10,
+  } = req.query;
 
   try {
     const whereClause: Prisma.PokemonWhereInput = {};
@@ -145,13 +151,20 @@ export const searchPokemons = async (
     const orderBy =
       orderByMapping[sortBy as SortByValues] || orderByMapping[SortByValues.ID];
 
+    const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
+    const take = parseInt(limit as string);
+
     const pokemons: IPokemonData[] = await prisma.pokemon.findMany({
       where: whereClause,
       include: includeRelations,
       orderBy,
+      skip,
+      take,
     });
 
-    res.json(pokemons);
+    const totalCount = await prisma.pokemon.count({ where: whereClause });
+
+    res.json({ pokemons, totalCount });
   } catch (err) {
     next(err);
   }
