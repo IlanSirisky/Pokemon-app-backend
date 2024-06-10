@@ -1,9 +1,8 @@
-import { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { NextFunction, Request, Response } from "express";
 import { SortByValues } from "../types/sortBy";
 import { orderByMapping } from "../utils/orderByOptions";
 import {
-  catchPokemonHandler,
   getAllPokemonsHandler,
   getOwnedPokemonsHandler,
   getPokemonByIdHandler,
@@ -81,24 +80,6 @@ export const getRandomPokemon = async (
     const pokemon = await getRandomPokemonHandler(isOwnedBoolean, randomOffset);
     if (!pokemon) {
       return res.status(404).json({ error: "No Pokémon found" });
-    }
-    res.json(pokemon);
-  } catch (err) {
-    next(err);
-  }
-};
-
-// PUT catch a Pokemon - update isOwned to true
-export const catchPokemon = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  const { id } = req.params;
-  try {
-    const pokemon = await catchPokemonHandler(Number(id));
-    if (!pokemon) {
-      return res.status(404).json({ error: "Pokemon not found" });
     }
     res.json(pokemon);
   } catch (err) {
