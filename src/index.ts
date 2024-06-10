@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import pokemonRoutes from "./routes/pokemonRoutes";
 import errorHandler from "./middleware/errorMiddleware";
+import battleRoutes from "./routes/battleRoutes";
 
 dotenv.config();
 
@@ -13,6 +14,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use("/api", pokemonRoutes);
+app.use('/api/battle', battleRoutes);
 
 app.use(errorHandler);
 
