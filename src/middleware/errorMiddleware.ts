@@ -1,12 +1,12 @@
 import { Request, Response, NextFunction } from "express";
+import { AppError } from "../types/responseTypes";
 
 const errorHandler = (
-  err: any,
+  error: AppError,
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
-  console.error(err);
   res.status(500).json({ error: "Internal Server Error" });
 };
 

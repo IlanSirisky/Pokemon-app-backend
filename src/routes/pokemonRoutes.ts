@@ -1,7 +1,6 @@
 import { Router } from "express";
 import {
-  getAllPokemons,
-  getOwnedPokemons,
+  getPokemons,
   getPokemonById,
   getRandomPokemon,
   searchPokemons,
@@ -14,10 +13,9 @@ import {
 const router = Router();
 
 /*** GET ***/
-router.get("/pokemons", getAllPokemons);
-router.get("/pokemons/owned", getOwnedPokemons);
-router.get("/pokemons/:id", validatePokemonId, getPokemonById);
+router.get("/", getPokemons);
 router.get("/random-pokemon", getRandomPokemon);
 router.get("/search-pokemons", validateSearchPokemons, searchPokemons);
+router.get("/:id", validatePokemonId, getPokemonById);
 
 export default router;

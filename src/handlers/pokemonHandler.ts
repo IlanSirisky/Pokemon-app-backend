@@ -1,79 +1,65 @@
-import { PrismaClient, Prisma } from "@prisma/client";
-import { IPokemonData } from "../types/pokemonType";
+import { Prisma } from "@prisma/client";
+import pokemonModel from "../models/pokemonModel";
+import { SortByValues } from "../types/sortBy";
+import { orderByMapping } from "../utils/orderByOptions";
 
-const prisma = new PrismaClient();
-
-const includeRelations: Prisma.PokemonInclude = {
-  profile: true,
-  baseStats: true,
+export const fetchPokemons = async (isOwned?: string) => {
+  const isOwnedBoolean = isOwned === "true";
+  return await pokemonModel.getPokemons(isOwnedBoolean);
 };
 
-export const getAllPokemonsHandler = async (): Promise<IPokemonData[]> => {
-  return await prisma.pokemon.findMany({
-    include: includeRelations,
-  });
+const fetchPokemonById = async (id: number) => {
+  return await pokemonModel.getPokemonById(id);
 };
 
-export const getOwnedPokemonsHandler = async (): Promise<IPokemonData[]> => {
-  return await prisma.pokemon.findMany({
-    where: { isOwned: true },
-    include: includeRelations,
-  });
+const fetchRandomPokemon = async (isOwned: string) => {
+  const isOwnedBoolean = isOwned === "true";
+  const count = await pokemonModel.getPokemonCount(isOwnedBoolean);
+
+  if (count === 0) {
+    return null;
+  }
+
+  const randomOffset = Math.floor(Math.random() * count);
+  return await pokemonModel.getRandomPokemon(isOwnedBoolean, randomOffset);
 };
 
-export const getPokemonByIdHandler = async (
-  id: number
-): Promise<IPokemonData | null> => {
-  return await prisma.pokemon.findUnique({
-    where: { id },
-    include: includeRelations,
-  });
+const modifyOwnerPokemon = async (id: number) => {
+  return await pokemonModel.updateOwnerPokemon(id);
 };
 
-export const getPokemonCountHandler = async (
-  isOwned: boolean
-): Promise<number> => {
-  return await prisma.pokemon.count({
-    where: { isOwned },
-  });
+const findPokemons = async (query: {
+  isOwned: string;
+  searchValue?: string;
+  sortBy: string;
+  page: number;
+  limit: number;
+}) => {
+  const { isOwned, searchValue, sortBy, page, limit } = query;
+
+  const whereClause: Prisma.PokemonWhereInput = {};
+  if (isOwned !== undefined) {
+    whereClause.isOwned = isOwned === "true";
+  }
+  if (searchValue) {
+    whereClause.name = { contains: searchValue as string, mode: "insensitive" };
+  }
+
+  // Get orderBy
+  const orderBy =
+    orderByMapping[sortBy as SortByValues] || orderByMapping[SortByValues.ID];
+
+  // Calculate skip and take for pagination
+  const skip = (page - 1) * limit;
+  const take = limit;
+
+  return await pokemonModel.searchPokemons(whereClause, orderBy, skip, take);
 };
 
-export const getRandomPokemonHandler = async (
-  isOwned: boolean,
-  randomOffset: number
-): Promise<IPokemonData | null> => {
-  return await prisma.pokemon.findFirst({
-    where: { isOwned },
-    skip: randomOffset,
-    include: includeRelations,
-  });
-};
-
-export const catchPokemonHandler = async (
-  id: number
-): Promise<IPokemonData | null> => {
-  return await prisma.pokemon.update({
-    where: { id },
-    data: { isOwned: true },
-    include: includeRelations,
-  });
-};
-
-export const searchPokemonsHandler = async (
-  where: Prisma.PokemonWhereInput,
-  orderBy: Prisma.PokemonOrderByWithRelationInput,
-  skip: number,
-  take: number
-): Promise<{ pokemons: IPokemonData[]; totalCount: number }> => {
-  const pokemons = await prisma.pokemon.findMany({
-    where,
-    orderBy,
-    skip,
-    take,
-    include: includeRelations,
-  });
-
-  const totalCount = await prisma.pokemon.count({ where });
-
-  return { pokemons, totalCount };
+export default {
+  fetchPokemons,
+  fetchPokemonById,
+  fetchRandomPokemon,
+  modifyOwnerPokemon,
+  findPokemons,
 };

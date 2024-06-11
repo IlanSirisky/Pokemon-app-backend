@@ -4,8 +4,8 @@ export interface IPokemonData {
   isOwned: boolean;
   description: string;
   image: string;
-  profile: Profile | null;
-  baseStats: BaseStats | null;
+  profile?: Profile | null;
+  baseStats?: BaseStats | null;
 }
 
 export interface Profile {

@@ -1,25 +1,21 @@
-import { IPokemonData } from "../types/pokemonType";
 import { calculateDamage, calculateCatchRate } from "../utils/fightFunctions";
-import {
-  catchPokemonHandler,
-  getPokemonByIdHandler,
-} from "../handlers/pokemonHandler";
+import { CatchResponse, IFightState } from "../types/responseTypes";
+import pokemonModel from "../models/pokemonModel";
 
 // Current fight state
-let currentFight = {
-  playerPokemon: null as IPokemonData | null,
-  opponentPokemon: null as IPokemonData | null,
+let currentFight: IFightState = {
+  playerPokemon: null,
+  opponentPokemon: null,
   playerCurrentHp: 0,
   opponentCurrentHp: 0,
 };
 
-// Start a fight
-export const startFightHandler = async (
+export const startFight = async (
   playerPokemonId: number,
   opponentPokemonId: number
-) => {
-  const playerPokemon = await getPokemonByIdHandler(playerPokemonId);
-  const opponentPokemon = await getPokemonByIdHandler(opponentPokemonId);
+): Promise<IFightState> => {
+  const playerPokemon = await pokemonModel.getPokemonById(playerPokemonId);
+  const opponentPokemon = await pokemonModel.getPokemonById(opponentPokemonId);
 
   if (!playerPokemon || !opponentPokemon) {
     throw new Error("Pokémon not found");
@@ -33,8 +29,7 @@ export const startFightHandler = async (
   return currentFight;
 };
 
-// Handle player attack
-export const playerAttackHandler = () => {
+export const playerAttack = (): IFightState => {
   if (!currentFight.playerPokemon || !currentFight.opponentPokemon) {
     throw new Error("No active fight");
   }
@@ -51,8 +46,7 @@ export const playerAttackHandler = () => {
   return currentFight;
 };
 
-// Handle opponent attack
-export const opponentAttackHandler = () => {
+export const opponentAttack = (): IFightState => {
   if (!currentFight.playerPokemon || !currentFight.opponentPokemon) {
     throw new Error("No active fight");
   }
@@ -70,7 +64,7 @@ export const opponentAttackHandler = () => {
 };
 
 // Catch the opponent Pokémon
-export const tryToCatchPokemonHandler = async () => {
+const tryToCatchPokemon = async (): Promise<CatchResponse> => {
   if (!currentFight.opponentPokemon) {
     throw new Error("No opponent Pokémon to catch");
   }
@@ -82,18 +76,25 @@ export const tryToCatchPokemonHandler = async () => {
   const catchSuccess = Math.random() < catchRate;
 
   if (catchSuccess) {
-    const updatedPokemon = await catchPokemonHandler(
+    const updatedPokemon = await pokemonModel.updateOwnerPokemon(
       currentFight.opponentPokemon.id
     );
     return {
       message: "Caught the Pokémon!",
       caught: true,
       pokemon: updatedPokemon,
-    };
+    } as CatchResponse;
   } else {
     return {
       message: "Failed to catch the Pokémon.",
       caught: false,
-    };
+    } as CatchResponse;
   }
+};
+
+export default {
+  startFight,
+  playerAttack,
+  opponentAttack,
+  tryToCatchPokemon,
 };

@@ -1,6 +1,6 @@
 -- CreateTable
 CREATE TABLE "Pokemon" (
-    "id" SERIAL NOT NULL,
+    "id" SERIAL PRIMARY KEY,
     "name" TEXT NOT NULL,
     "isOwned" BOOLEAN NOT NULL,
     "description" TEXT NOT NULL,
@@ -15,12 +15,16 @@ CREATE TABLE "Profile" (
     "height" TEXT NOT NULL,
     "weight" TEXT NOT NULL,
     "ability" TEXT[],
-    "types" TEXT[]
+    "types" TEXT[],
+         
+    CONSTRAINT "Profile_pokemon_id_fkey" FOREIGN KEY ("pokemon_id")
+    REFERENCES "Pokemon"("id")
+    ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
 -- CreateTable
 CREATE TABLE "BaseStats" (
-    "pokemon_id" INTEGER NOT NULL,
+    "pokemon_id" INTEGER PRIMARY KEY,
     "hp" INTEGER NOT NULL,
     "attack" INTEGER NOT NULL,
     "defense" INTEGER NOT NULL,
@@ -29,14 +33,12 @@ CREATE TABLE "BaseStats" (
     "speed" INTEGER NOT NULL,
     "power_level" INTEGER NOT NULL,
 
-    CONSTRAINT "BaseStats_pkey" PRIMARY KEY ("pokemon_id")
+    CONSTRAINT "BaseStats_pokemon_id_fkey" FOREIGN KEY ("pokemon_id")
+    REFERENCES "Pokemon"("id")
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE
 );
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Profile_pokemon_id_key" ON "Profile"("pokemon_id");
 
--- AddForeignKey
-ALTER TABLE "Profile" ADD CONSTRAINT "Profile_pokemon_id_fkey" FOREIGN KEY ("pokemon_id") REFERENCES "Pokemon"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "BaseStats" ADD CONSTRAINT "BaseStats_pokemon_id_fkey" FOREIGN KEY ("pokemon_id") REFERENCES "Pokemon"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

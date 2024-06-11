@@ -24,6 +24,8 @@ model Profile {
   ability    String[]
   types      String[]
   Pokemon    Pokemon  @relation(fields: [pokemon_id], references: [id])
+
+  @@index([pokemon_id])
 }
 
 model BaseStats {
