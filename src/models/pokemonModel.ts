@@ -8,15 +8,6 @@ const includeRelations: Prisma.PokemonInclude = {
   baseStats: true,
 };
 
-const getPokemons = async (owned?: boolean): Promise<IPokemonData[]> => {
-  const where: Prisma.PokemonWhereInput =
-    owned !== undefined ? { isOwned: owned } : {};
-  return await prisma.pokemon.findMany({
-    where,
-    include: includeRelations,
-  });
-};
-
 const getPokemonById = async (id: number): Promise<IPokemonData | null> => {
   return await prisma.pokemon.findUnique({
     where: { id },
@@ -69,7 +60,6 @@ const searchPokemons = async (
 };
 
 export default {
-  getPokemons,
   getPokemonById,
   getPokemonCount,
   getRandomPokemon,

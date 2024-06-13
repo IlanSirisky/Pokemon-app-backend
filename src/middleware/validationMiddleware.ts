@@ -18,7 +18,7 @@ export const validateSearchPokemons = [
     .optional()
     .isBoolean()
     .withMessage("isOwned must be a boolean"),
-  query("q").optional().isString().withMessage("Search query must be a string"),
+  query("searchValue").optional().isString().withMessage("Search query must be a string"),
   query("sortBy")
     .optional()
     .isIn(Object.values(SortByValues))

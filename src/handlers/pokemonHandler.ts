@@ -3,11 +3,6 @@ import pokemonModel from "../models/pokemonModel";
 import { SortByValues } from "../types/sortBy";
 import { orderByMapping } from "../utils/orderByOptions";
 
-export const fetchPokemons = async (isOwned?: string) => {
-  const isOwnedBoolean = isOwned === "true";
-  return await pokemonModel.getPokemons(isOwnedBoolean);
-};
-
 const fetchPokemonById = async (id: number) => {
   return await pokemonModel.getPokemonById(id);
 };
@@ -31,7 +26,7 @@ const modifyOwnerPokemon = async (id: number) => {
 const findPokemons = async (query: {
   isOwned: string;
   searchValue?: string;
-  sortBy: string;
+  sortBy?: string;
   page: number;
   limit: number;
 }) => {
@@ -46,8 +41,9 @@ const findPokemons = async (query: {
   }
 
   // Get orderBy
-  const orderBy =
-    orderByMapping[sortBy as SortByValues] || orderByMapping[SortByValues.ID];
+  const orderBy = sortBy
+    ? orderByMapping[sortBy as SortByValues]
+    : orderByMapping[SortByValues.ID];
 
   // Calculate skip and take for pagination
   const skip = (page - 1) * limit;
@@ -57,7 +53,6 @@ const findPokemons = async (query: {
 };
 
 export default {
-  fetchPokemons,
   fetchPokemonById,
   fetchRandomPokemon,
   modifyOwnerPokemon,

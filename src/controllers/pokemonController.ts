@@ -2,22 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { buildResponse } from "../utils/responseBuilder";
 import pokemonHandler from "../handlers/pokemonHandler";
 import { AppError } from "../types/responseTypes";
-import { SortByValues } from "../types/sortBy";
 
-export const getPokemons = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  const { isOwned } = req.query;
-
-  try {
-    const pokemons = await pokemonHandler.fetchPokemons(isOwned as string);
-    buildResponse(res, 200, "Pokemons retrieved successfully", pokemons);
-  } catch (error) {
-    next(error as AppError);
-  }
-};
 
 export const getPokemonById = async (
   req: Request,
@@ -63,12 +48,13 @@ export const searchPokemons = async (
   const {
     isOwned,
     searchValue,
-    sortBy = SortByValues.ID,
-    page = 1,
-    limit = 10,
+    sortBy,
+    page,
+    limit,
   } = req.query;
 
   try {
+    console.log("hereeee", isOwned, searchValue, sortBy, page, limit);
     const result = await pokemonHandler.findPokemons({
       isOwned: isOwned as string,
       searchValue: searchValue as string,
@@ -76,6 +62,7 @@ export const searchPokemons = async (
       page: Number(page),
       limit: Number(limit),
     });
+    
 
     buildResponse(res, 200, "Pokemons retrieved successfully", result);
   } catch (error) {
