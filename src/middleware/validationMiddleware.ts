@@ -1,4 +1,4 @@
-import { param, query, validationResult } from "express-validator";
+import { body, param, query, validationResult } from "express-validator";
 import { Request, Response, NextFunction } from "express";
 import { SortByValues } from "../types/sortBy";
 
@@ -33,6 +33,22 @@ export const validateSearchPokemons = [
     .optional()
     .isInt({ min: 1 })
     .withMessage("limit must be a positive integer greater than 0"),
+  (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    next();
+  },
+];
+
+export const validateStartFight = [
+  body("playerPokemonId")
+    .isInt({ min: 1 })
+    .withMessage("Player Pokemon ID must be a positive integer"),
+  body("opponentPokemonId")
+    .isInt({ min: 1 })
+    .withMessage("Opponent Pokemon ID must be a positive integer"),
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
