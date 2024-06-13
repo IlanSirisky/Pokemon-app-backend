@@ -54,7 +54,6 @@ export const searchPokemons = async (
   } = req.query;
 
   try {
-    console.log("hereeee", isOwned, searchValue, sortBy, page, limit);
     const result = await pokemonHandler.findPokemons({
       isOwned: isOwned as string,
       searchValue: searchValue as string,
