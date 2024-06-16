@@ -32,3 +32,18 @@ export const register = async (
     next(error as AppError);
   }
 };
+
+export const confirmSignup = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const { username, code } = req.body;
+
+  try {
+    const result = await authHandler.confirmSignup(username, code);
+    return buildResponse(res, 200, "User confirmed successfully", result);
+  } catch (error) {
+    next(error as AppError);
+  }
+};

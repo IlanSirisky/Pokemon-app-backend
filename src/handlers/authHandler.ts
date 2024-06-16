@@ -4,6 +4,7 @@ import {
   AuthenticationDetails,
   CognitoUserAttribute,
 } from "amazon-cognito-identity-js";
+import AWS from "aws-sdk";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -13,6 +14,9 @@ const userPool = new CognitoUserPool({
   ClientId: process.env.COGNITO_CLIENT_ID || "",
 });
 
+const cognito = new AWS.CognitoIdentityServiceProvider({
+  region: process.env.AWS_REGION,
+});
 
 export const login = async (email: string, password: string) => {
   const authDetails = new AuthenticationDetails({
@@ -59,7 +63,27 @@ export const register = async (
   });
 };
 
+export const confirmSignup = async (username: string, code: string) => {
+    const userData = {
+      Username: username,
+      Pool: userPool,
+    };
+  
+    const cognitoUser = new CognitoUser(userData);
+  
+    return new Promise((resolve, reject) => {
+      cognitoUser.confirmRegistration(code, true, (err, result) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(result);
+        }
+      });
+    });
+  };
+
 export default {
   login,
   register,
+  confirmSignup,
 };
