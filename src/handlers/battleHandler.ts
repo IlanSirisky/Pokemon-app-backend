@@ -1,6 +1,7 @@
 import { calculateDamage, calculateCatchRate } from "../utils/fightFunctions";
 import { CatchResponse, IFightState } from "../types/responseTypes";
 import pokemonModel from "../models/pokemonModel";
+import userModel from "../models/userModel";
 
 // Current fight state
 let currentFight: IFightState = {
@@ -64,7 +65,7 @@ export const opponentAttack = (): IFightState => {
 };
 
 // Catch the opponent Pokémon
-const tryToCatchPokemon = async (): Promise<CatchResponse> => {
+const tryToCatchPokemon = async (userSub: string): Promise<CatchResponse> => {
   if (!currentFight.opponentPokemon) {
     throw new Error("No opponent Pokémon to catch");
   }
@@ -76,13 +77,19 @@ const tryToCatchPokemon = async (): Promise<CatchResponse> => {
   const catchSuccess = Math.random() < catchRate;
 
   if (catchSuccess) {
-    const updatedPokemon = await pokemonModel.updateOwnerPokemon(
+    const user = await userModel.findUserBySub(userSub);
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+    const updatedUserPokemon = await userModel.addPokemonToUser(
+      user.id,
       currentFight.opponentPokemon.id
     );
     return {
       message: "Caught the Pokémon!",
       caught: true,
-      pokemon: updatedPokemon,
+      pokemon: updatedUserPokemon.Pokemon,
     } as CatchResponse;
   } else {
     return {

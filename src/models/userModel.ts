@@ -1,34 +1,44 @@
 import { PrismaClient, Prisma } from "@prisma/client";
 import { IUserData, IUserPokemonData } from "../types/userType";
+import { includeRelations } from "./pokemonModel";
 
 const prisma = new PrismaClient();
 
 const findUserBySub = async (sub: string): Promise<IUserData | null> => {
-  return await prisma.user.findFirst({
+  return (await prisma.user.findFirst({
     where: { sub },
-  }) as IUserData | null;
-}
+  })) as IUserData | null;
+};
 
-const addUser = async (username: string, email: string, sub: string): Promise<IUserData> => {
-  return await prisma.user.create({
+const addUser = async (
+  username: string,
+  email: string,
+  sub: string
+): Promise<IUserData> => {
+  return (await prisma.user.create({
     data: {
       username,
       email,
       sub,
     },
-  }) as IUserData;
+  })) as IUserData;
 };
 
 const addPokemonToUser = async (
   userId: number,
   pokemonId: number
 ): Promise<IUserPokemonData> => {
-  return await prisma.usersPokemons.create({
+  return (await prisma.usersPokemons.create({
     data: {
       user_id: userId,
       pokemon_id: pokemonId,
     },
-  }) as IUserPokemonData;
+    include: {
+      Pokemon: {
+        include: includeRelations,
+      },
+    },
+  })) as IUserPokemonData;
 };
 
 export default {

@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import battleHandler from "../handlers/battleHandler";
 import { buildResponse } from "../utils/responseBuilder";
 import { AppError } from "../types/responseTypes";
+import { UserRequest } from "../types/requestTypes";
 
 export const startFight = async (
   req: Request,
@@ -53,12 +54,14 @@ export const opponentAttack = (
 };
 
 export const catchPokemon = async (
-  req: Request,
+  req: UserRequest,
   res: Response,
   next: NextFunction
 ) => {
+  const { sub } = req.user!;
+
   try {
-    const result = await battleHandler.tryToCatchPokemon();
+    const result = await battleHandler.tryToCatchPokemon(sub);
     return buildResponse(res, 200, "Catch Attempt", result);
   } catch (error) {
     next(error as AppError);

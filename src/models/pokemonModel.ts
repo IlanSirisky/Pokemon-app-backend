@@ -4,7 +4,7 @@ import { IUserPokemonData } from "../types/userType";
 
 const prisma = new PrismaClient();
 
-const includeRelations: Prisma.PokemonInclude = {
+export const includeRelations: Prisma.PokemonInclude = {
   profile: true,
   baseStats: true,
 };
