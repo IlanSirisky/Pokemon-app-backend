@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { buildResponse } from "../utils/responseBuilder";
 import pokemonHandler from "../handlers/pokemonHandler";
 import { AppError } from "../types/responseTypes";
+import { UserRequest } from "../types/requestTypes";
 
 export const getPokemonById = async (
   req: Request,
@@ -44,13 +45,7 @@ export const searchPokemons = async (
   res: Response,
   next: NextFunction
 ) => {
-  const {
-    isOwned,
-    searchValue,
-    sortBy,
-    page,
-    limit,
-  } = req.query;
+  const { isOwned, searchValue, sortBy, page, limit } = req.query;
 
   try {
     const result = await pokemonHandler.findPokemons({
@@ -60,9 +55,28 @@ export const searchPokemons = async (
       page: Number(page),
       limit: Number(limit),
     });
-    
 
     buildResponse(res, 200, "Pokemons retrieved successfully", result);
+  } catch (error) {
+    next(error as AppError);
+  }
+};
+
+export const getPokemonTypesCount = async (
+  req: UserRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    console.log("hereeeCONTROLLER");
+    
+    const typesCount = await pokemonHandler.getPokemonTypesCount(req.user!.sub);
+    buildResponse(
+      res,
+      200,
+      "Pokemon types count retrieved successfully",
+      typesCount
+    );
   } catch (error) {
     next(error as AppError);
   }

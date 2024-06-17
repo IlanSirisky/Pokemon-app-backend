@@ -52,9 +52,30 @@ const findPokemons = async (query: {
   return await pokemonModel.searchPokemons(whereClause, orderBy, skip, take);
 };
 
+const getPokemonTypesCount = async (userSub: string) => {
+  console.log("hereeeHANDLER");
+
+  const result = await pokemonModel.getPokemonTypes(userSub);
+
+  const typesCount: { [key: string]: number } = {};
+
+  result.forEach((userPokemon) => {
+    userPokemon.Pokemon.profile?.types.forEach((type) => {
+      if (typesCount[type]) {
+        typesCount[type]++;
+      } else {
+        typesCount[type] = 1;
+      }
+    });
+  });
+
+  return typesCount;
+};
+
 export default {
   fetchPokemonById,
   fetchRandomPokemon,
   modifyOwnerPokemon,
   findPokemons,
+  getPokemonTypesCount,
 };

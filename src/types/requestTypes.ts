@@ -1,7 +1,7 @@
 import { Request } from "express";
 
-export interface userRequest extends Request {
-  user: {
+export interface UserRequest extends Request {
+  user?: {
     sub: string;
   };
 }

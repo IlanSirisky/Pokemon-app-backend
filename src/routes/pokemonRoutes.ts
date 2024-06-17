@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   getPokemonById,
+  getPokemonTypesCount,
   getRandomPokemon,
   searchPokemons,
 } from "../controllers/pokemonController";
@@ -20,6 +21,8 @@ router.get(
   validateSearchPokemons,
   searchPokemons
 );
+router.get("/pokemon-types-count", verifyToken, getPokemonTypesCount);
+
 router.get("/:id", verifyToken, validatePokemonId, getPokemonById);
 
 export default router;

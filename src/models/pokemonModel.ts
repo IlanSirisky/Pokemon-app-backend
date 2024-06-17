@@ -59,10 +59,30 @@ const searchPokemons = async (
   return { pokemons, totalCount };
 };
 
+const getPokemonTypes = async (userSub: string) => {
+  console.log("hereeeMODELLLLL");
+
+  return await prisma.usersPokemons.findMany({
+    where: {
+      User: {
+        sub: userSub,
+      },
+    },
+    include: {
+      Pokemon: {
+        include: {
+          profile: true,
+        },
+      },
+    },
+  });
+};
+
 export default {
   getPokemonById,
   getPokemonCount,
   getRandomPokemon,
   updateOwnerPokemon,
   searchPokemons,
+  getPokemonTypes,
 };

@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import AWS from "aws-sdk";
 import jwt from "jsonwebtoken";
 import NodeCache from "node-cache";
-import { userRequest } from "../types/requestTypes";
+import { UserRequest } from "../types/requestTypes";
 
 AWS.config.update({ region: process.env.AWS_REGION });
 
@@ -24,7 +24,7 @@ export const verifyToken = async (
   try {
     const cachedUser = tokenCache.get<{ sub: string }>(token);
     if (cachedUser) {
-      (req as userRequest).user = cachedUser;
+      (req as UserRequest).user = cachedUser;
       return next();
     }
 
@@ -33,11 +33,10 @@ export const verifyToken = async (
       header: { kid: string };
       payload: { sub: string };
     } | null;
-    
+
     if (!decodedToken) {
       return res.status(401).json({ message: "Invalid token" });
     }
-
     const params = {
       AccessToken: token.replace("Bearer ", ""),
     };
@@ -46,12 +45,13 @@ export const verifyToken = async (
     await cognito.getUser(params).promise();
 
     // Attach user ID to request object
-    const user = { sub: decodedToken.sub };
-    (req as userRequest).user = user;
+    const user = { sub: decodedToken.payload.sub };
+    (req as UserRequest).user = user;
 
     // Cache the token and user info
     tokenCache.set(token, user);
-
+    console.log("heeereeeeeeeeeee");
+    
     next();
   } catch (error) {
     console.error("Token verification failed", error);
