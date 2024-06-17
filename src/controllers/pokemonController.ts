@@ -3,7 +3,6 @@ import { buildResponse } from "../utils/responseBuilder";
 import pokemonHandler from "../handlers/pokemonHandler";
 import { AppError } from "../types/responseTypes";
 
-
 export const getPokemonById = async (
   req: Request,
   res: Response,
