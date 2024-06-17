@@ -53,8 +53,6 @@ const findPokemons = async (query: {
 };
 
 const getPokemonTypesCount = async (userSub: string) => {
-  console.log("hereeeHANDLER");
-
   const result = await pokemonModel.getPokemonTypes(userSub);
 
   const typesCount: { [key: string]: number } = {};

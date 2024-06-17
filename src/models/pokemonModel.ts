@@ -60,8 +60,6 @@ const searchPokemons = async (
 };
 
 const getPokemonTypes = async (userSub: string) => {
-  console.log("hereeeMODELLLLL");
-
   return await prisma.usersPokemons.findMany({
     where: {
       User: {

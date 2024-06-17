@@ -68,8 +68,6 @@ export const getPokemonTypesCount = async (
   next: NextFunction
 ) => {
   try {
-    console.log("hereeeCONTROLLER");
-    
     const typesCount = await pokemonHandler.getPokemonTypesCount(req.user!.sub);
     buildResponse(
       res,

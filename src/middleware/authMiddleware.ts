@@ -50,7 +50,6 @@ export const verifyToken = async (
 
     // Cache the token and user info
     tokenCache.set(token, user);
-    console.log("heeereeeeeeeeeee");
     
     next();
   } catch (error) {
