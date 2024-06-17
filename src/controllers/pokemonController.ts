@@ -22,14 +22,18 @@ export const getPokemonById = async (
 };
 
 export const getRandomPokemon = async (
-  req: Request,
+  req: UserRequest,
   res: Response,
   next: NextFunction
 ) => {
   const { isOwned } = req.query;
+  const { sub } = req.user!;
 
   try {
-    const pokemon = await pokemonHandler.fetchRandomPokemon(isOwned as string);
+    const pokemon = await pokemonHandler.fetchRandomPokemon(
+      sub,
+      isOwned as string
+    );
 
     if (!pokemon) {
       return buildResponse(res, 404, "No Pokémon found");
@@ -41,14 +45,16 @@ export const getRandomPokemon = async (
 };
 
 export const searchPokemons = async (
-  req: Request,
+  req: UserRequest,
   res: Response,
   next: NextFunction
 ) => {
   const { isOwned, searchValue, sortBy, page, limit } = req.query;
+  const { sub } = req.user!;
 
   try {
     const result = await pokemonHandler.findPokemons({
+      userSub: sub,
       isOwned: isOwned as string,
       searchValue: searchValue as string,
       sortBy: sortBy as string,
@@ -67,8 +73,10 @@ export const getPokemonTypesCount = async (
   res: Response,
   next: NextFunction
 ) => {
+  const { sub } = req.user!;
+
   try {
-    const typesCount = await pokemonHandler.getPokemonTypesCount(req.user!.sub);
+    const typesCount = await pokemonHandler.getPokemonTypesCount(sub);
     buildResponse(
       res,
       200,

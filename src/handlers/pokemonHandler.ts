@@ -2,21 +2,28 @@ import { Prisma } from "@prisma/client";
 import pokemonModel from "../models/pokemonModel";
 import { SortByValues } from "../types/sortBy";
 import { orderByMapping } from "../utils/orderByOptions";
+import userModel from "../models/userModel";
 
 const fetchPokemonById = async (id: number) => {
   return await pokemonModel.getPokemonById(id);
 };
 
-const fetchRandomPokemon = async (isOwned: string) => {
+const fetchRandomPokemon = async (userSub: string, isOwned: string) => {
   const isOwnedBoolean = isOwned === "true";
-  const count = await pokemonModel.getPokemonCount(isOwnedBoolean);
+
+  const user = await userModel.findUserBySub(userSub);
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  const count = await pokemonModel.getPokemonCount(isOwnedBoolean, user.id);
 
   if (count === 0) {
     return null;
   }
 
   const randomOffset = Math.floor(Math.random() * count);
-  return await pokemonModel.getRandomPokemon(isOwnedBoolean, randomOffset);
+  return await pokemonModel.getRandomPokemon(isOwnedBoolean, randomOffset, user.id);
 };
 
 const modifyOwnerPokemon = async (id: number) => {
@@ -24,17 +31,23 @@ const modifyOwnerPokemon = async (id: number) => {
 };
 
 const findPokemons = async (query: {
+  userSub: string;
   isOwned: string;
   searchValue?: string;
   sortBy?: string;
   page: number;
   limit: number;
 }) => {
-  const { isOwned, searchValue, sortBy, page, limit } = query;
+  const { userSub, isOwned, searchValue, sortBy, page, limit } = query;
+
+  const user = await userModel.findUserBySub(userSub);
+  if (!user) {
+    throw new Error("User not found");
+  }
 
   const whereClause: Prisma.PokemonWhereInput = {};
   if (isOwned !== undefined) {
-    whereClause.isOwned = isOwned === "true";
+    whereClause.Users = { some: { user_id: user.id } };
   }
   if (searchValue) {
     whereClause.name = { contains: searchValue as string, mode: "insensitive" };

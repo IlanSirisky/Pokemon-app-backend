@@ -3,6 +3,12 @@ import { IUserData, IUserPokemonData } from "../types/userType";
 
 const prisma = new PrismaClient();
 
+const findUserBySub = async (sub: string): Promise<IUserData | null> => {
+  return await prisma.user.findFirst({
+    where: { sub },
+  }) as IUserData | null;
+}
+
 const addUser = async (username: string, email: string, sub: string): Promise<IUserData> => {
   return await prisma.user.create({
     data: {
@@ -25,21 +31,8 @@ const addPokemonToUser = async (
   }) as IUserPokemonData;
 };
 
-const getRandomUserPokemon = async (
-  userId: number,
-  randomOffset: number
-): Promise<IUserPokemonData | null> => {
-  return await prisma.usersPokemons.findFirst({
-    where: { user_id: userId },
-    skip: randomOffset,
-    include: {
-      Pokemon: true,
-    },
-  }) as IUserPokemonData | null;
-};
-
 export default {
+  findUserBySub,
   addUser,
   addPokemonToUser,
-  getRandomUserPokemon,
 };
