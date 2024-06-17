@@ -45,6 +45,7 @@ model BaseStats {
 
 model User {
   id       Int             @id @default(autoincrement())
+  sub      String          @unique
   username String          @unique
   email    String          @unique
   Pokemons UsersPokemons[]
