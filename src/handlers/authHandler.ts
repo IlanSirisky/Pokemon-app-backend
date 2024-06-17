@@ -4,18 +4,15 @@ import {
   AuthenticationDetails,
   CognitoUserAttribute,
 } from "amazon-cognito-identity-js";
-import AWS from "aws-sdk";
 import dotenv from "dotenv";
+import userModel from "../models/userModel";
+import { getRandomPokemonId } from "../utils/randomStartingPokemon";
 
 dotenv.config();
 
 const userPool = new CognitoUserPool({
   UserPoolId: process.env.COGNITO_USER_POOL_ID || "",
   ClientId: process.env.COGNITO_CLIENT_ID || "",
-});
-
-const cognito = new AWS.CognitoIdentityServiceProvider({
-  region: process.env.AWS_REGION,
 });
 
 export const login = async (email: string, password: string) => {
@@ -53,7 +50,47 @@ export const register = async (
   ];
 
   return new Promise((resolve, reject) => {
-    userPool.signUp(username, password, attributeList, [], (err, result) => {
+    userPool.signUp(
+      username,
+      password,
+      attributeList,
+      [],
+      async (err, result) => {
+        if (err) {
+          reject(err);
+        } else if (result) {
+          try {
+            const newUser = await userModel.addUser(
+              username,
+              email,
+              result.userSub
+            );
+
+            const randomPokemonId = getRandomPokemonId();
+            await userModel.addPokemonToUser(newUser.id, randomPokemonId);
+
+            resolve(newUser);
+          } catch (dbError) {
+            reject(dbError);
+          }
+        } else {
+          reject(new Error("User registration failed, result is undefined"));
+        }
+      }
+    );
+  });
+};
+
+export const confirmSignup = async (username: string, code: string) => {
+  const userData = {
+    Username: username,
+    Pool: userPool,
+  };
+
+  const cognitoUser = new CognitoUser(userData);
+
+  return new Promise((resolve, reject) => {
+    cognitoUser.confirmRegistration(code, true, (err, result) => {
       if (err) {
         reject(err);
       } else {
@@ -62,25 +99,6 @@ export const register = async (
     });
   });
 };
-
-export const confirmSignup = async (username: string, code: string) => {
-    const userData = {
-      Username: username,
-      Pool: userPool,
-    };
-  
-    const cognitoUser = new CognitoUser(userData);
-  
-    return new Promise((resolve, reject) => {
-      cognitoUser.confirmRegistration(code, true, (err, result) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(result);
-        }
-      });
-    });
-  };
 
 export default {
   login,
