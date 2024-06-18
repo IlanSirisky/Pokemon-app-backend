@@ -1,7 +1,7 @@
 export interface IPokemonData {
   id: number;
   name: string;
-  isOwned: boolean;
+  isOwned?: boolean;
   description: string;
   image: string;
   profile?: Profile | null;

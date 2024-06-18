@@ -31,74 +31,71 @@ const calculateThresholds = (scores) => {
 };
 
 const insertData = async () => {
+  const totalScores = data.map((pokemon) => {
+    return (
+      pokemon.base.HP +
+      pokemon.base.Attack +
+      pokemon.base.Defense +
+      pokemon.base["Sp. Attack"] +
+      pokemon.base["Sp. Defense"] +
+      pokemon.base.Speed
+    );
+  });
+
+  const thresholds = calculateThresholds(totalScores);
+
+  const batchSize = 100;
+  const pokemonChunks = [];
+
+  for (let i = 0; i < data.length; i += batchSize) {
+    pokemonChunks.push(data.slice(i, i + batchSize));
+  }
+
   try {
-    const totalScores = data.map((pokemon) => {
-      return (
-        pokemon.base.HP +
-        pokemon.base.Attack +
-        pokemon.base.Defense +
-        pokemon.base["Sp. Attack"] +
-        pokemon.base["Sp. Defense"] +
-        pokemon.base.Speed
+    for (const chunk of pokemonChunks) {
+      await prisma.$transaction(
+        chunk.map((pokemon) => {
+          const hp = pokemon.base.HP;
+          const attack = pokemon.base.Attack;
+          const defense = pokemon.base.Defense;
+          const spAttack = pokemon.base["Sp. Attack"];
+          const spDefense = pokemon.base["Sp. Defense"];
+          const speed = pokemon.base.Speed;
+          const totalScore = hp + attack + defense + spAttack + spDefense + speed;
+          const powerLevel = calculatePowerLevel(totalScore, thresholds);
+
+          return prisma.pokemon.upsert({
+            where: { id: pokemon.id },
+            update: {},
+            create: {
+              id: pokemon.id,
+              name: pokemon.name.english,
+              isOwned: false,
+              description: pokemon.description,
+              image: pokemon.image.hires,
+              profile: {
+                create: {
+                  height: pokemon.profile.height,
+                  weight: pokemon.profile.weight,
+                  ability: pokemon.profile.ability.map((ability) => ability[0]),
+                  types: pokemon.type,
+                },
+              },
+              baseStats: {
+                create: {
+                  hp: hp,
+                  attack: attack,
+                  defense: defense,
+                  sp_attack: spAttack,
+                  sp_defense: spDefense,
+                  speed: speed,
+                  power_level: powerLevel,
+                },
+              },
+            },
+          });
+        })
       );
-    });
-
-    const thresholds = calculateThresholds(totalScores);
-
-    for (const pokemon of data) {
-      // Check if the Pokemon already exists
-      const existingPokemon = await prisma.pokemon.findUnique({
-        where: { id: pokemon.id },
-      });
-
-      if (existingPokemon) {
-        console.log(
-          `Pokemon with id ${pokemon.id} already exists. Skipping...`
-        );
-        continue;
-      }
-
-      // Calculate the total score
-      const hp = pokemon.base.HP;
-      const attack = pokemon.base.Attack;
-      const defense = pokemon.base.Defense;
-      const spAttack = pokemon.base["Sp. Attack"];
-      const spDefense = pokemon.base["Sp. Defense"];
-      const speed = pokemon.base.Speed;
-      const totalScore = hp + attack + defense + spAttack + spDefense + speed;
-
-      // Determine the power level
-      const powerLevel = calculatePowerLevel(totalScore, thresholds);
-
-      // Insert into Pokemon table
-      await prisma.pokemon.create({
-        data: {
-          id: pokemon.id,
-          name: pokemon.name.english,
-          isOwned: false,
-          description: pokemon.description,
-          image: pokemon.image.hires,
-          profile: {
-            create: {
-              height: pokemon.profile.height,
-              weight: pokemon.profile.weight,
-              ability: pokemon.profile.ability.map((ability) => ability[0]),
-              types: pokemon.type,
-            },
-          },
-          baseStats: {
-            create: {
-              hp: hp,
-              attack: attack,
-              defense: defense,
-              sp_attack: spAttack,
-              sp_defense: spDefense,
-              speed: speed,
-              power_level: powerLevel,
-            },
-          },
-        },
-      });
     }
 
     console.log("Data inserted successfully");
