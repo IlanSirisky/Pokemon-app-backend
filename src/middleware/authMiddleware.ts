@@ -8,7 +8,7 @@ import { ENV_VARS } from "../envs";
 AWS.config.update({ region: ENV_VARS.region });
 
 const cognito = new AWS.CognitoIdentityServiceProvider();
-const tokenCache = new NodeCache({ stdTTL: 3600 }); // Cache tokens for an hour
+const tokenCache = new NodeCache({ stdTTL: 0 });
 
 export const verifyToken = async (
   req: Request,

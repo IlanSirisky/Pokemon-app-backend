@@ -2,7 +2,6 @@
 CREATE TABLE "Pokemon" (
     "id" SERIAL NOT NULL,
     "name" TEXT NOT NULL,
-    "isOwned" BOOLEAN NOT NULL,
     "description" TEXT NOT NULL,
     "image" TEXT NOT NULL,
 

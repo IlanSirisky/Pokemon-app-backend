@@ -30,10 +30,6 @@ const fetchRandomPokemon = async (userSub: string, isOwned: string) => {
   );
 };
 
-const modifyOwnerPokemon = async (id: number) => {
-  return await pokemonModel.updateOwnerPokemon(id);
-};
-
 const findPokemons = async (query: {
   userSub: string;
   isOwned: string;
@@ -66,7 +62,19 @@ const findPokemons = async (query: {
   const skip = (page - 1) * limit;
   const take = limit;
 
-  return await pokemonModel.searchPokemons(whereClause, orderBy, skip, take);
+  const { pokemons, totalCount } = await pokemonModel.searchPokemons(whereClause, orderBy, skip, take);
+
+  const pokemonsWithOwnership = await Promise.all(pokemons.map(async (pokemon) => {
+    const isOwned = await userModel.checkUserPokemon(user.id, pokemon.id);
+
+    return {
+      ...pokemon,
+      isOwned: Boolean(isOwned),
+    };
+  }));
+
+  return { pokemons: pokemonsWithOwnership, totalCount };
+
 };
 
 const getPokemonTypesCount = async (userSub: string) => {
@@ -88,7 +96,6 @@ const getPokemonTypesCount = async (userSub: string) => {
 export default {
   fetchPokemonById,
   fetchRandomPokemon,
-  modifyOwnerPokemon,
   findPokemons,
   getPokemonTypesCount,
 };

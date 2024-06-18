@@ -41,8 +41,24 @@ const addPokemonToUser = async (
   })) as IUserPokemonData;
 };
 
+const checkUserPokemon = async (
+  userId: number,
+  pokemonId: number
+): Promise<IUserPokemonData | null> => {
+  return (await prisma.usersPokemons.findFirst({
+    where: { user_id: userId, pokemon_id: pokemonId },
+    include: {
+      Pokemon: {
+        include: includeRelations,
+      },
+    },
+  })) as IUserPokemonData | null;
+} 
+
+
 export default {
   findUserBySub,
   addUser,
   addPokemonToUser,
+  checkUserPokemon,
 };

@@ -10,7 +10,6 @@ generator client {
 model Pokemon {
   id          Int             @id @default(autoincrement())
   name        String
-  isOwned     Boolean
   description String
   image       String
   profile     Profile?

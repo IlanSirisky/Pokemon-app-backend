@@ -25,7 +25,15 @@ const getPokemonCount = async (
       where: { user_id: userId },
     });
   } else {
-    return await prisma.pokemon.count({ where: { isOwned } });
+    return await prisma.pokemon.count({
+      where: {
+        Users: {
+          none: {
+            user_id: userId,
+          },
+        },
+      },
+    });
   }
 };
 
@@ -58,14 +66,6 @@ const getRandomPokemon = async (
       include: includeRelations,
     });
   }
-};
-
-const updateOwnerPokemon = async (id: number): Promise<IPokemonData | null> => {
-  return await prisma.pokemon.update({
-    where: { id },
-    data: { isOwned: true },
-    include: includeRelations,
-  });
 };
 
 const searchPokemons = async (
@@ -108,7 +108,6 @@ export default {
   getPokemonById,
   getPokemonCount,
   getRandomPokemon,
-  updateOwnerPokemon,
   searchPokemons,
   getPokemonTypes,
 };
