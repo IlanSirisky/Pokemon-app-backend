@@ -3,11 +3,12 @@ import AWS from "aws-sdk";
 import jwt from "jsonwebtoken";
 import NodeCache from "node-cache";
 import { UserRequest } from "../types/requestTypes";
+import { ENV_VARS } from "../envs";
 
-AWS.config.update({ region: process.env.AWS_REGION });
+AWS.config.update({ region: ENV_VARS.region });
 
 const cognito = new AWS.CognitoIdentityServiceProvider();
-const tokenCache = new NodeCache({ stdTTL: 600 }); // Cache tokens for 10 minutes
+const tokenCache = new NodeCache({ stdTTL: 3600 }); // Cache tokens for an hour
 
 export const verifyToken = async (
   req: Request,
@@ -50,7 +51,7 @@ export const verifyToken = async (
 
     // Cache the token and user info
     tokenCache.set(token, user);
-    
+
     next();
   } catch (error) {
     console.error("Token verification failed", error);

@@ -23,7 +23,11 @@ const fetchRandomPokemon = async (userSub: string, isOwned: string) => {
   }
 
   const randomOffset = Math.floor(Math.random() * count);
-  return await pokemonModel.getRandomPokemon(isOwnedBoolean, randomOffset, user.id);
+  return await pokemonModel.getRandomPokemon(
+    isOwnedBoolean,
+    randomOffset,
+    user.id
+  );
 };
 
 const modifyOwnerPokemon = async (id: number) => {
@@ -68,17 +72,15 @@ const findPokemons = async (query: {
 const getPokemonTypesCount = async (userSub: string) => {
   const result = await pokemonModel.getPokemonTypes(userSub);
 
-  const typesCount: { [key: string]: number } = {};
-
-  result.forEach((userPokemon) => {
-    userPokemon.Pokemon.profile?.types.forEach((type) => {
-      if (typesCount[type]) {
-        typesCount[type]++;
-      } else {
-        typesCount[type] = 1;
-      }
-    });
-  });
+  const typesCount = result.reduce<{ [key: string]: number }>(
+    (acc, userPokemon) => {
+      userPokemon.Pokemon.profile?.types.forEach((type) => {
+        acc[type] = (acc[type] || 0) + 1;
+      });
+      return acc;
+    },
+    {}
+  );
 
   return typesCount;
 };
